@@ -1,0 +1,27 @@
+{
+  "grid": [
+    { "id": "p1", "xs": 12, "class": "main", "table":"unitextTable", "height":"fill"}
+  ],
+  "spacing": 10,
+  "breadcrumbs": { "tree": "plugins" },
+
+  "p1": [
+    {
+      "title": "Publish",
+      "type": "table",
+      "prop": "unitextTable",
+      "popupenable": true,
+
+      "columns": [
+
+        { "prop": "did", "title": "$Device", "type": "droplist", "data":"deviceList",  "width": 250  },
+        { "prop": "prop", "title": "$DeviceProperty", "type": "droplist", "data":[{"id":"value", "title":"value"}, {"id":"on", "title":"on"}, {"id":"off", "title":"off"}], "width": 100 },
+        { "prop": "topic", "title": "Топик для публикации", "type": "input", "width": 200 },
+        { "prop": "message", "title": "Сообщение", "type": "input", "width": 200 },
+        { "prop": "control", "title": "Разрешено управление/запись", "type": "cb", "width": 100 },
+        { "prop": "ctopic", "title": "Топик для управления", "type": "input", "width": 200, "hide":"!data.control" },
+        { "prop": "cmessage", "title": "Сообщение", "type": "input", "width": 200, "hide":"!data.control" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "grid": [
+    { "id": "p1", "xs": 12, "class": "main", "table":"unitchannelsTable", "height":"fill" }
+  ],
+  "spacing": 10,
+  "breadcrumbs": { "tree": "plugins" },
+
+  "p1": [
+    { "prop": "header", "title": "Каналы", "type": "header", "size":"h6"  },
+    {
+      "title": "Channels",
+      "type": "table",
+      "prop": "unitchannelsTable",
+      "popupenable":false,
+      "columns": [
+     
+        { "prop": "chan", "title": "$Channel",  "type": "link", "command":"forward",  "width": 250 },
+        { "prop": "r", "title": "Read",  "type": "cb", "width": 64 },
+        { "prop": "topic", "title": "Подписка: топик ", "type": "input",  "width": 200, "hide":"!data.r"  },
+        { "prop": "w", "title": "Write",  "type": "cb", "width": 64 },
+        { "prop": "pubtopic", "title": "Публикация: топик", "type": "input",  "width": 200, "hide":"!data.w"  },
+        { "prop": "pubmessage", "title": "Публикация: сообщение", "type": "input",  "width": 150, "hide":"!data.w"  },
+        { "prop": "did", "title": "$Device",  "type": "link", "command":"forward", "width": 250  },
+        { "prop": "prop", "title": "$DeviceProperty", "type": "text",  "width": 100 },
+        { "prop": "realtime_chan_val", "title": "Канал: значение", "type": "text",  "width": 64 },
+        { "prop": "realtime_chan_ts", "title": "Канал: время", "type": "text",  "width": 150 },
+        { "prop": "realtime_dev_val", "title": "Устройство: значение", "type": "text",  "width": 64 },
+        { "prop": "realtime_dev_ts", "title": "Устройство: время", "type": "text",  "width": 150 },
+        { "prop": "realtime_dev_err", "title": "Устройство: ошибка", "type": "text",  "width": 150 }
+      ]
+    }
+  ]
+}

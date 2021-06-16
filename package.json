@@ -1,0 +1,15 @@
+{
+  "name": "mqttclient",
+  "version": "0.0.9",
+  "description": "Mqtt client",
+  "main": "mqtt.js",
+  "dependencies": {
+    "mqtt": "^4.2.6"
+  },
+  "devDependencies": {
+    "mocha": "^4.1.0",
+    "should": "^13.2.3"
+  },
+  "author": "INTRA",
+  "license": "MIT"
+}

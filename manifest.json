@@ -1,0 +1,8 @@
+{
+  "description": "MQTT client V5.5",
+
+  "chdefault": {
+    "chan": "ch_1",
+    "topic": "/devices/dev1"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "grid": [
+    { "id": "p2", "xs": 6, "class": "main", "table": "devhard"},
+    { "id": "p3", "xs": 6, "class": "main", "table": "devhard"}
+  ],
+  "spacing": 4,
+
+  "p2": [
+    { "prop": "chan", "title": "$Channel", "type": "input" },
+    { "prop": "r", "title": "Чтение (подписка)", "type": "cb" },
+    { "prop": "topic", "title": "Топик для подписки", "type": "input", "hide":"!data.p2.r"},
+    { "prop": "calc", "title": "Формула извлечения значения", "type": "input", "hide":"!data.p2.r"},
+    { "prop": "devpropname", "title": "Свойство устройства при автоматической привязке", "type": "input"}
+  ],
+  "p3": [
+    { "prop": "w", "title": "Запись (публикация)", "type": "cb" },
+    { "prop": "pubtopic", "title": "Топик для публикации", "type": "input", "hide":"!data.p3.w" },
+    { "prop": "pubmessage", "title": "Сообщение для публикации", "type": "input", "hide":"!data.p3.w" }
+  ]
+}
