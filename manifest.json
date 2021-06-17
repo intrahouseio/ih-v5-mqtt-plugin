@@ -1,7 +1,7 @@
 {
   "description": "MQTT client V5.5",
 
-  "chdefault": {
+  "default_channel": {
     "chan": "ch_1",
     "topic": "/devices/dev1"
   }
