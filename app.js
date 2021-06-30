@@ -9,6 +9,7 @@ const mqtt = require('mqtt');
 const converter = require('./lib/converter');
 const Scanner = require('./lib/scanner');
 
+
 module.exports = async function(plugin) {
   const scanner = new Scanner(plugin);
 
@@ -22,6 +23,7 @@ module.exports = async function(plugin) {
   let client = '';
   connect();
 
+  
   function connect() {
     const { host, port, use_password, username, password } = plugin.params;
     const options = { host, port };
