@@ -1,5 +1,6 @@
 {
   "description": "MQTT client V5.5",
+  "single":0,
 
   "default_channel": {
     "chan": "ch_1",
