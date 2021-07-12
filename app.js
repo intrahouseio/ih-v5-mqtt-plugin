@@ -18,12 +18,15 @@ module.exports = async function(plugin) {
 
   // Подготовить каналы для публикации - нужно подписаться на сервере IH на эти устройства
   const filter = converter.saveExtraGetFilter(plugin.extra);
-  if (filter) plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
+  if (filter) {
+    plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
+    plugin.log('SEND: '+util.inspect({ type: 'sub', id: 'main', event: 'devices', filter }));
+  }
 
   let client = '';
   connect();
 
-  
+
   function connect() {
     const { host, port, use_password, username, password } = plugin.params;
     const options = { host, port };
@@ -102,13 +105,16 @@ module.exports = async function(plugin) {
   }
 
   function publishAct(item) {
-    if (!item.topic) return;
+    // if (!item.topic) return;
+    let topic = item.pubtopic;
+    let mes = item.pubmessage;
     // if (item.act == 'set' && (!item.message || item.message == 'value')) item.message = String(item.value);
-    if (!item.message || item.message == 'value') item.message = String(item.value);
+    if (!mes || mes == 'value') mes = String(item.value);
 
-    const func = new Function('value', 'return `' + item.message + '`;');
+    const func = new Function('value', 'return ' + mes + ';');
+    // plugin.log('FUNC='+func.toString())
     const message = func(item.value) || '';
-    publish(item.topic, message);
+    publish(topic, message);
     return item.topic + ' ' + message;
   }
 
@@ -222,9 +228,10 @@ module.exports = async function(plugin) {
    * @param {Array of Objects} - data - массив команд
    *                            В команде  должен быть topic и message
    */
-  plugin.on('act', data => {
-    if (!data) return;
-    data.forEach(item => {
+  plugin.onAct(message => {
+    plugin.log('ACT data=' + util.inspect(message));
+    if (!message.data) return;
+    message.data.forEach(item => {
       try {
         const pubStr = publishAct(item);
         plugin.log('PUBLISH ' + pubStr, 1);
@@ -234,6 +241,8 @@ module.exports = async function(plugin) {
       }
     });
   });
+
+  
 
   /**  sub
    * Получил данные от сервера по подписке (публикация данных) - отправить брокеру
