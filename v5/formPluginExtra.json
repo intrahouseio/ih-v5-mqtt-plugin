@@ -1,33 +1,36 @@
 {
   "grid": [{ "id": "p1", "xs": 12, "class": "main", "table": "unitextTable", "height": "fill" }],
   "spacing": 10,
-  "breadcrumbs": { "tree": "plugins" },
 
   "p1": [
     {
       "title": "",
       "type": "table",
       "prop": "unitextTable",
-      "popupenable": false,
+      "popupenable": true,
 
       "columns": [
-        { "prop": "did", "title": "$Device", "type": "droplist", "data": "deviceList", "width": 250 },
         {
-          "prop": "prop",
+          "prop": "id_prop",
           "title": "$DeviceProperty",
+          "type": "smartbutton2",
+          "params": { "variant": "tree", "title": "Выберите свойство", "id": "devprops", "save": false },
+          "width": 250
+        },
+        { "prop": "topic", "title": "Топик для публикации", "type": "input", "width": 250 },
+        { "prop": "message", "title": "Сообщение", "type": "input", "width": 250 },
+        {
+          "prop": "qos",
+          "title": "QoS",
           "type": "droplist",
           "data": [
-            { "id": "value", "title": "value" },
-            { "id": "on", "title": "on" },
-            { "id": "off", "title": "off" }
+            { "id": 0, "title": "0" },
+            { "id": 1, "title": "1" },
+            { "id": 2, "title": "2" }
           ],
           "width": 100
         },
-        { "prop": "topic", "title": "Топик для публикации", "type": "input", "width": 200 },
-        { "prop": "message", "title": "Сообщение", "type": "input", "width": 200 },
-        { "prop": "control", "title": "Разрешено управление/запись", "type": "cb", "width": 100 },
-        { "prop": "ctopic", "title": "Топик для управления", "type": "input", "width": 200, "hide": "!data.control" },
-        { "prop": "cmessage", "title": "Сообщение", "type": "input", "width": 200, "hide": "!data.control" }
+        { "prop": "retain", "title": "Retain", "type": "cb", "width": 100 }
       ]
     }
   ]

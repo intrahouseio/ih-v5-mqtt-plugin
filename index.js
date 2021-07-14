@@ -17,7 +17,7 @@ const app = require('./app');
 
     // Получить каналы для публикации
     plugin.extra = await plugin.extra.get();
-    plugin.log('Received extra channels...');
+    plugin.log('Received extra channels...'+util.inspect(plugin.extra));
 
     // Получить параметры и соединиться с брокером
     plugin.params = await plugin.params.get();

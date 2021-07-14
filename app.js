@@ -9,7 +9,6 @@ const mqtt = require('mqtt');
 const converter = require('./lib/converter');
 const Scanner = require('./lib/scanner');
 
-
 module.exports = async function(plugin) {
   const scanner = new Scanner(plugin);
 
@@ -19,13 +18,37 @@ module.exports = async function(plugin) {
   // Подготовить каналы для публикации - нужно подписаться на сервере IH на эти устройства
   const filter = converter.saveExtraGetFilter(plugin.extra);
   if (filter) {
-    plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
-    plugin.log('SEND: '+util.inspect({ type: 'sub', id: 'main', event: 'devices', filter }));
+    // plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
+    plugin.onSub('devices', filter, data => {
+      if (!data) return;
+      data.forEach(item => {
+        // item: {did, prop, value}
+        try {
+          let pobj;
+          if (item.did && item.prop) {         
+            pobj = converter.getPubMapItem(item.did+'.'+item.prop);
+          }
+          // let pobj = converter.convertOutgoing(item.did + '.' + item.prop, item.value);
+          if (pobj && pobj.topic) {
+            let topic = pobj.topic;
+            let message = formMessage(pobj.message, item.value);
+           
+            publish(topic, message, pobj.options);
+            plugin.log('PUBLISH: ' + topic + ' ' + message +' with options='+util.inspect(pobj.options), 2);
+          } else {
+            plugin.log('NOT found extra for ' + util.inspect(item));
+          }
+        } catch (e) {
+          const errStr = 'PUBLISH for ' + util.inspect(item) + ' ERROR: ' + util.inspect(e);
+          plugin.log(errStr);
+        }
+      });
+    });
+    // plugin.log('SEND: '+util.inspect({ type: 'sub', id: 'main', event: 'devices', filter }));
   }
 
   let client = '';
   connect();
-
 
   function connect() {
     const { host, port, use_password, username, password } = plugin.params;
@@ -107,21 +130,25 @@ module.exports = async function(plugin) {
   function publishAct(item) {
     // if (!item.topic) return;
     let topic = item.pubtopic;
+    let message = formMessage(item.pubmessage, item.value);
+    /*
     let mes = item.pubmessage;
-    // if (item.act == 'set' && (!item.message || item.message == 'value')) item.message = String(item.value);
     if (!mes || mes == 'value') mes = String(item.value);
 
     const func = new Function('value', 'return ' + mes + ';');
     // plugin.log('FUNC='+func.toString())
     const message = func(item.value) || '';
+    */
     publish(topic, message);
-    return item.topic + ' ' + message;
+    return topic + ' ' + message;
   }
 
-  function publishData(item) {
-    let pobj = converter.convertOutgoing(item.dn, item.val);
-    if (pobj) publish(pobj.topic, pobj.message, pobj.options);
-    return pobj.topic + ' ' + pobj.message;
+  function formMessage(mes, value) {
+    if (!mes) mes = value;
+
+    const func = new Function('value', 'return String(' + mes + ');');
+    // plugin.log('FUNC='+func.toString())
+    return func(value) || '';
   }
 
   function publish(topic, message, options) {
@@ -242,13 +269,12 @@ module.exports = async function(plugin) {
     });
   });
 
-  
-
   /**  sub
    * Получил данные от сервера по подписке (публикация данных) - отправить брокеру
    * @param {Array of Objects} - data - массив данных
    *                             Элемент должен содержать dn, val
    */
+  /*
   plugin.on('sub', data => {
     if (!data) return;
     data.forEach(item => {
@@ -261,6 +287,7 @@ module.exports = async function(plugin) {
       }
     });
   });
+  */
 
   /**  command:  {type:'command', command:'publish', data:{topic, message, options}}
    *
