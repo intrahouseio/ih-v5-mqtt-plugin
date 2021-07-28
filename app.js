@@ -14,6 +14,7 @@ module.exports = async function(plugin) {
 
   // Подготовить каналы для подписки на брокере
   converter.createSubMap(plugin.channels);
+  converter.createCmdMap(plugin.extra);
 
   // Подготовить каналы для публикации - нужно подписаться на сервере IH на эти устройства
   const filter = converter.saveExtraGetFilter(plugin.extra);
@@ -25,16 +26,16 @@ module.exports = async function(plugin) {
         // item: {did, prop, value}
         try {
           let pobj;
-          if (item.did && item.prop) {         
-            pobj = converter.getPubMapItem(item.did+'.'+item.prop);
+          if (item.did && item.prop) {
+            pobj = converter.getPubMapItem(item.did + '.' + item.prop);
           }
           // let pobj = converter.convertOutgoing(item.did + '.' + item.prop, item.value);
           if (pobj && pobj.topic) {
             let topic = pobj.topic;
             let message = formMessage(pobj.message, item.value);
-           
+
             publish(topic, message, pobj.options);
-            plugin.log('PUBLISH: ' + topic + ' ' + message +' with options='+util.inspect(pobj.options), 2);
+            plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options=' + util.inspect(pobj.options), 2);
           } else {
             plugin.log('NOT found extra for ' + util.inspect(item));
           }
@@ -51,27 +52,30 @@ module.exports = async function(plugin) {
   connect();
 
   function connect() {
-    const { host, port, use_password, username, password } = plugin.params;
-    const options = { host, port };
+    let { host, port, use_password, username, password, protocol } = plugin.params;
+    if (!protocol || protocol.length < 3) protocol = '';
+
+    const options = { host, port, protocol };
     let authStr = '';
     if (use_password) {
       Object.assign(options, { username, password });
       authStr = 'username = ' + username;
     }
 
-    plugin.log(`Start connecting ${host}:${port} ${authStr}`, 1);
+    plugin.log(`Start connecting ${protocol}: ${host}:${port} ${authStr}`, 1);
     client = mqtt.connect(options);
 
     // Подключение успешно
     client.on('connect', () => {
       plugin.log('Connected', 1);
       subscribe(converter.getSubMapTopics());
+      subscribe(converter.getCmdMapTopics());
     });
 
     // Получены данные
     client.on('message', (topic, message) => {
       message = message.toString();
-      plugin.log('GET: ' + topic + ' ' + message, 2);
+      plugin.log('GET: ' + topic + ' ' + message);
       if (scanner.status > 0) {
         scanner.process(topic, message);
       }
@@ -109,17 +113,32 @@ module.exports = async function(plugin) {
     if (data) {
       // Если value - это объект и нужно извлекать время - в каждом элементе извлечь время
       try {
-        if (plugin.params.extract_ts && plugin.params.ts_field) processTimestamp(data);
-        plugin.sendData(data);
+        if (data[0] && data[0].cmditem) {
+          plugin.log('Get command todo ' + util.inspect(data[0]));
+          formAndSendCommand(data[0]);
+        } else {
+          if (plugin.params.extract_ts && plugin.params.ts_field) processTimestamp(data);
+          plugin.sendData(data);
+        }
       } catch (e) {
         plugin.log('Time process error, expected JSON with "' + plugin.params.ts_field + '" property');
       }
     }
   }
 
+  function formAndSendCommand({ cmditem, topic, message }) {
+    const { extype, did, prop } = cmditem;
+    // Отправить команду
+    if (extype == 'cmd') {
+      plugin.send({ type: 'command', command: 'device', did, prop });
+    } else if (extype == 'set') {
+      plugin.send({ type: 'command', command: 'setval', did, prop, value:message });
+    }
+  }
+
   function subscribe(topics) {
     if (!topics) return;
-    plugin.log('SUBSCRIBE: ' + topics.join(', '), 2);
+    plugin.log('SUBSCRIBE: ' + topics.join(', '));
     client.subscribe(topics, err => {
       if (err) {
         plugin.log('ERROR subscribing: ' + util.inspect(err));
@@ -131,14 +150,6 @@ module.exports = async function(plugin) {
     // if (!item.topic) return;
     let topic = item.pubtopic;
     let message = formMessage(item.pubmessage, item.value);
-    /*
-    let mes = item.pubmessage;
-    if (!mes || mes == 'value') mes = String(item.value);
-
-    const func = new Function('value', 'return ' + mes + ';');
-    // plugin.log('FUNC='+func.toString())
-    const message = func(item.value) || '';
-    */
     publish(topic, message);
     return topic + ' ' + message;
   }
@@ -147,7 +158,7 @@ module.exports = async function(plugin) {
     if (!mes) mes = value;
 
     const func = new Function('value', 'return String(' + mes + ');');
-    // plugin.log('FUNC='+func.toString())
+    // plugin.log('FUNC=' + func.toString());
     return func(value) || '';
   }
 
@@ -263,7 +274,7 @@ module.exports = async function(plugin) {
         const pubStr = publishAct(item);
         plugin.log('PUBLISH ' + pubStr, 1);
       } catch (e) {
-        const errStr = 'PUBLISH for ' + util.inspect(item) + ' ERROR: ' + util.inspect(e);
+        const errStr = 'ERROR PUBLISH!! ERROR: ' + util.inspect(e);
         plugin.log(errStr);
       }
     });

@@ -11,14 +11,40 @@
 
       "columns": [
         {
-          "prop": "id_prop",
-          "title": "$DeviceProperty",
-          "type": "smartbutton2",
-          "params": { "variant": "tree", "title": "Выберите свойство", "id": "devprops", "save": false },
+          "prop": "did",
+          "title": "$Device",
+          "type": "droplist",
+          "data":"deviceList",
           "width": 250
         },
-        { "prop": "topic", "title": "Топик для публикации", "type": "input", "width": 250 },
-        { "prop": "message", "title": "Сообщение", "type": "input", "width": 250 },
+
+        {
+          "prop": "prop",
+          "title": "Свойство или команда",
+          "type": "input",
+          "width": 150
+        },
+
+        {
+          "prop": "extype",
+          "title": "Операция",
+          "type": "droplist",
+          "width": 200,
+          "data": [
+            { "id": "pub", "title": "Публиковать значение" },
+            { "id": "cmd", "title": "Принять команду" },
+            { "id": "set", "title": "Принять значение" }
+          ]
+        },
+
+        { "prop": "topic", "title": "Топик", "type": "input", "width": 250 },
+        {
+          "prop": "message",
+          "title": "Сообщение",
+          "type": "input",
+          "width": 250,
+          "hide": "data.extype.id != 'cmd'"
+        },
         {
           "prop": "qos",
           "title": "QoS",
@@ -28,9 +54,10 @@
             { "id": 1, "title": "1" },
             { "id": 2, "title": "2" }
           ],
-          "width": 100
+          "width": 100,
+          "hide": "data.extype.id != 'pub'"
         },
-        { "prop": "retain", "title": "Retain", "type": "cb", "width": 100 }
+        { "prop": "retain", "title": "Retain", "type": "cb", "width": 100, "hide": "data.extype.id != 'pub'" }
       ]
     }
   ]
