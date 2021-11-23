@@ -156,10 +156,20 @@ module.exports = async function(plugin) {
 
   function formMessage(mes, value) {
     if (!mes) mes = value;
+    
+    if (mes.indexOf('value') >= 0) {
+      const func = new Function('value', 'return String(' + mes + ');');
+      // plugin.log('FUNC=' + func.toString());
+      return func(value) || '';
+    }
+    // Если без формулы - могло быть в кавычках - убрать кавычки
+    return removeBorderQuotes(mes);
+  }
 
-    const func = new Function('value', 'return String(' + mes + ');');
-    // plugin.log('FUNC=' + func.toString());
-    return func(value) || '';
+  function removeBorderQuotes(str) {
+    let res = str;
+    if (res.startsWith('"') || str.startsWith("'")) res.substr(1, res.length - 2);
+   return res;
   }
 
   function publish(topic, message, options) {

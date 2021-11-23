@@ -1,28 +1,52 @@
 {
   "grid": [
-    { "id": "p2", "xs": 6, "class": "main", "table": "devhard" },
-    { "id": "p3", "xs": 6, "class": "main", "table": "devhard" }
+    { "id": "p2", "xs": 8, "class": "main", "table": "devhard" },
+    { "id": "p3", "xs": 4, "class": "main", "table": "devhard" },
+    { "id": "p4", "xs": 12, "class": "main", "table": "devhard", "hide": "!data.p3.r" },
+    { "id": "p9", "xs": 12, "class": "main", "table": "onechannelrtTable", "hide": "!data.p3.r" },
+    { "id": "p5", "xs": 12, "class": "main", "table": "devhard", "hide": "!data.p3.w" },
+    { "id": "ptest", "xs": 12, "class": "main", "table": "devhard", "hide": "!data.p3.w" }
   ],
   "spacing": 4,
 
   "p2": [
     { "prop": "chan", "title": "$Channel", "type": "input" },
-    { "prop": "r", "title": "Чтение (подписка)", "type": "cb" },
-    { "prop": "topic", "title": "Топик для подписки", "type": "input", "hide": "!data.p2.r" },
-    { "prop": "calc", "title": "Формула извлечения значения", "type": "input", "hide": "!data.p2.r" },
+    { "prop": "title", "title": "$Name", "type": "input" },
     { "prop": "devpropname", "title": "Свойство устройства при автоматической привязке", "type": "input" }
   ],
+
   "p3": [
-    { "prop": "w", "title": "Запись (публикация)", "type": "cb" },
-    { "prop": "pubtopic", "title": "Топик для публикации", "type": "input", "hide": "!data.p3.w" },
-    { "prop": "pubmessage", "title": "Сообщение для публикации", "type": "input", "hide": "!data.p3.w" },
+  
+    { "prop": "r", "title": "Чтение (подписка)", "type": "cb" },
+    { "prop": "w", "title": "Запись (публикация)", "type": "cb" }
+  ],
+
+  "p4": [
+    { "prop": "topic", "title": "Топик для подписки", "type": "input" },
+    { "prop": "calc", "title": "Формула извлечения значения", "type": "input" }
+  ],
+
+  "p5": [
+
+    { "prop": "pubtopic", "title": "Топик для публикации", "type": "input" },
+    { "prop": "pubmessage", "title": "Сообщение для публикации", "type": "input" }
+  ],
+
+  "ptest": [
+    { "prop": "header_testwrite", "title": "Тест записи", "type": "header" },
+    { "prop": "testValue", "title": "Сообщение для публикации", "type": "input" },
+
     {
       "prop": "writeButton",
-      "title": "Опубликовать",
+      "title": "$doWrite",
       "type": "button",
       "command": "writetochannel",
-      "param": "write",
-      "hide": "!data.p3.w"
+      "param": "write"
     }
+  ],
+
+  "p9": [
+    { "prop": "realtime_chan_str", "title": "Канал", "type": "text" },
+    { "prop": "realtime_dev_str", "title": "Устройство", "type": "text" }
   ]
 }
