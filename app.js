@@ -93,6 +93,7 @@ module.exports = async function(plugin) {
     });
 
     // Сообщения от библиотеки для отладки
+    /*
     client.on('packetsend', packet => {
       plugin.log('Packet send. cmd:' + packet.cmd, 2);
     });
@@ -100,6 +101,7 @@ module.exports = async function(plugin) {
     client.on('packetreceive', packet => {
       plugin.log('Packet receive. cmd: ' + packet.cmd, 2);
     });
+    */
   }
 
   function processMessage(topic, message) {
@@ -132,13 +134,15 @@ module.exports = async function(plugin) {
     if (extype == 'cmd') {
       plugin.send({ type: 'command', command: 'device', did, prop });
     } else if (extype == 'set') {
-      plugin.send({ type: 'command', command: 'setval', did, prop, value:message });
+      plugin.send({ type: 'command', command: 'setval', did, prop, value: message });
     }
   }
 
   function subscribe(topics) {
     if (!topics) return;
-    plugin.log('SUBSCRIBE: ' + topics.join(', '));
+    if (!Array.isArray(topics)) topics = [topics];
+
+    plugin.log('SUBSCRIBE: ' + String(topics));
     client.subscribe(topics, err => {
       if (err) {
         plugin.log('ERROR subscribing: ' + util.inspect(err));
@@ -156,7 +160,7 @@ module.exports = async function(plugin) {
 
   function formMessage(mes, value) {
     if (!mes) mes = value;
-    
+
     if (mes.indexOf('value') >= 0) {
       const func = new Function('value', 'return String(' + mes + ');');
       // plugin.log('FUNC=' + func.toString());
@@ -169,7 +173,7 @@ module.exports = async function(plugin) {
   function removeBorderQuotes(str) {
     let res = str;
     if (res.startsWith('"') || str.startsWith("'")) res.substr(1, res.length - 2);
-   return res;
+    return res;
   }
 
   function publish(topic, message, options) {
@@ -209,7 +213,10 @@ module.exports = async function(plugin) {
     if (!oldid) return;
     const topic = converter.findTopicById(oldid);
     const restopic = converter.deleteSubMapItem(topic, oldid);
-    if (restopic) client.unsubscribe(restopic);
+    if (restopic) {
+      plugin.log('UNSUBSCRIBE: ' + restopic);
+      client.unsubscribe(restopic);
+    }
   }
 
   /**
@@ -246,6 +253,7 @@ module.exports = async function(plugin) {
   function scanRequest(scanObj) {
     const scanTopic = scanner.request(scanObj);
     if (scanTopic) {
+      plugin.log('SUBSCRIBE: ' + scanTopic );
       client.subscribe(scanTopic, err => {
         if (err) {
           plugin.log('ERROR subscribe on ' + scanTopic + ': ' + util.inspect(err));
@@ -259,6 +267,7 @@ module.exports = async function(plugin) {
     const scanTopic = scanner.stop();
     // Отписаться и подписаться заново!!
     if (scanTopic) {
+      plugin.log('UNSUBSCRIBE: ' + scanTopic);
       client.unsubscribe(scanTopic, err => {
         if (!err) {
           // Заново подписаться на топики из каналов
@@ -290,25 +299,7 @@ module.exports = async function(plugin) {
     });
   });
 
-  /**  sub
-   * Получил данные от сервера по подписке (публикация данных) - отправить брокеру
-   * @param {Array of Objects} - data - массив данных
-   *                             Элемент должен содержать dn, val
-   */
-  /*
-  plugin.on('sub', data => {
-    if (!data) return;
-    data.forEach(item => {
-      try {
-        const pubStr = publishData(item);
-        plugin.log('PUBLISH: ' + pubStr, 2);
-      } catch (e) {
-        const errStr = 'PUBLISH for ' + util.inspect(item) + ' ERROR: ' + util.inspect(e);
-        plugin.log(errStr);
-      }
-    });
-  });
-  */
+ 
 
   /**  command:  {type:'command', command:'publish', data:{topic, message, options}}
    *
@@ -340,17 +331,18 @@ module.exports = async function(plugin) {
     }
   });
 
-  // События при изменении каналов, recs = {Array of Objects}
-  plugin.onAdd('channels', recs => {
-    recs.forEach(rec => addChannel(rec));
-  });
-
-  plugin.onUpdate('channels', recs => {
-    recs.forEach(rec => updateChannel(rec));
-  });
-
-  plugin.onDelete('channels', recs => {
-    recs.forEach(rec => deleteChannel(rec));
+ // При изменении каналов, recs = {Array of Objects}
+ plugin.onChange('channels', recs => {
+    // plugin.log('onChange '+util.inspect(recs))
+    recs.forEach(rec => {
+      if (rec.op == 'add') {
+        addChannel(rec);
+      } else if (rec.op == 'update') {
+        updateChannel(rec);
+      } else if (rec.op == 'delete') {
+        deleteChannel(rec);
+      }
+    });
   });
 
   plugin.on('exit', () => {
