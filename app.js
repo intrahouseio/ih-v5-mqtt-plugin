@@ -153,13 +153,19 @@ module.exports = async function(plugin) {
   function publishAct(item) {
     // if (!item.topic) return;
     let topic = item.pubtopic;
-    let message = formMessage(item.pubmessage, item.value);
+    let message = item.value;
+    if (!item.chanId && item.pubmessage) {
+      // Старый вариант - до версии сервера 5.5.140
+      message = formMessage(item.pubmessage, item.value);
+    } else {
+      message = removeBorderQuotes(String(message));
+    }
     publish(topic, message);
     return topic + ' ' + message;
   }
 
   function formMessage(mes, value) {
-    if (!mes) mes = value;
+    // if (!mes) mes = value;
 
     if (mes.indexOf('value') >= 0) {
       const func = new Function('value', 'return String(' + mes + ');');
@@ -167,13 +173,12 @@ module.exports = async function(plugin) {
       return func(value) || '';
     }
     // Если без формулы - могло быть в кавычках - убрать кавычки
-    return removeBorderQuotes(mes);
+    return typeof mes == 'string' ? removeBorderQuotes(mes) : String(mes);
   }
 
   function removeBorderQuotes(str) {
-    let res = str;
-    if (res.startsWith('"') || str.startsWith("'")) res.substr(1, res.length - 2);
-    return res;
+    if (typeof str != 'string') return str;
+    return str.startsWith('"') || str.startsWith("'") ? str.substr(1, str.length - 2) : str;
   }
 
   function publish(topic, message, options) {
@@ -253,7 +258,7 @@ module.exports = async function(plugin) {
   function scanRequest(scanObj) {
     const scanTopic = scanner.request(scanObj);
     if (scanTopic) {
-      plugin.log('SUBSCRIBE: ' + scanTopic );
+      plugin.log('SUBSCRIBE: ' + scanTopic);
       client.subscribe(scanTopic, err => {
         if (err) {
           plugin.log('ERROR subscribe on ' + scanTopic + ': ' + util.inspect(err));
@@ -299,8 +304,6 @@ module.exports = async function(plugin) {
     });
   });
 
- 
-
   /**  command:  {type:'command', command:'publish', data:{topic, message, options}}
    *
    * Получил от сервера команду  - отправить брокеру или можно выполнить на уровне плагина
@@ -331,8 +334,8 @@ module.exports = async function(plugin) {
     }
   });
 
- // При изменении каналов, recs = {Array of Objects}
- plugin.onChange('channels', recs => {
+  // При изменении каналов, recs = {Array of Objects}
+  plugin.onChange('channels', recs => {
     // plugin.log('onChange '+util.inspect(recs))
     recs.forEach(rec => {
       if (rec.op == 'add') {
