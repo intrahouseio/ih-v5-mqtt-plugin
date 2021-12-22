@@ -35,9 +35,14 @@ module.exports = async function(plugin) {
           // let pobj = converter.convertOutgoing(item.did + '.' + item.prop, item.value);
           if (pobj && pobj.topic) {
             let topic = pobj.topic;
-            let message = formMessage(pobj.message, item.value);
-            
-            publishExtra(topic, item.value.toString(), pobj.options, pobj.bufferlength);
+            let message = '';
+            //let message = formMessage(pobj.message, item.value);
+            if (pobj.bufferlength > 0) {
+              message = JSON.stringify({value:item.value, ts:Date.now()});
+            } else {
+              message = item.value.toString();
+            }
+            publishExtra(topic, message, pobj.options, pobj.bufferlength);
             plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options=' + util.inspect(pobj.options), 2);
           } else {
             plugin.log('NOT found extra for ' + util.inspect(item));
@@ -253,10 +258,10 @@ module.exports = async function(plugin) {
       buffer[topic].options = options;
     }
     if (buffer[topic].data.length < bufferlength) {
-      buffer[topic].data.push({value:message, ts:Date.now()});
+      buffer[topic].data.push(message);
     } else {
       buffer[topic].data.shift();
-      buffer[topic].data.push({value:message, ts:Date.now()});
+      buffer[topic].data.push(message);
     }
     plugin.log('Buffer ' + util.inspect(buffer[topic]), 2);
   }
