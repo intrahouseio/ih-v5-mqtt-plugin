@@ -56,7 +56,7 @@ module.exports = async function(plugin) {
     // plugin.log('SEND: '+util.inspect({ type: 'sub', id: 'main', event: 'devices', filter }));
   }
 
-  let client = '';
+  let client = {};
   
   connect();
 
@@ -112,7 +112,15 @@ module.exports = async function(plugin) {
       // 
     });
 
-    client.on('reconnecting', () => {
+    client.on('disconnect', () => {
+      plugin.log('Broker disconected client');
+      clientState = 'disconnect';
+      client.reconnect();
+      //plugin.exit(1, 'Connection error: Host is offline');
+      // 
+    });
+
+    client.on('reconnect', () => {
       plugin.log('Reconnecting');
       clientState = 'reconnect';
       //plugin.exit(1, 'Connection error: Host is offline');
@@ -231,7 +239,6 @@ module.exports = async function(plugin) {
 
   function publishExtra(topic, message, options, bufferlength) {
     if (!topic || !message) return;
-    plugin.log('PUBLISH: ' + topic + ' ' + message + ' '+clientState, 2);
     if (clientState == 'connected') {
       
       client.publish(topic, message, options, function (err) {
@@ -243,7 +250,7 @@ module.exports = async function(plugin) {
         }
       });
     } 
-    if (clientState == 'error' || clientState == 'offline')  {
+    if (clientState == 'error' || clientState == 'offline' || clientState == 'disconnect')  {
       if (bufferlength > 0) {
         writeBuffer(topic, message, options, bufferlength);
       }
