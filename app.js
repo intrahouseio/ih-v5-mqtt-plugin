@@ -122,7 +122,7 @@ module.exports = async function(plugin) {
 
     client.on('reconnect', () => {
       plugin.log('Reconnecting');
-      clientState = 'reconnect';
+      //clientState = 'reconnect';
       //plugin.exit(1, 'Connection error: Host is offline');
       // 
     });
@@ -240,7 +240,6 @@ module.exports = async function(plugin) {
   function publishExtra(topic, message, options, bufferlength) {
     if (!topic || !message) return;
     if (clientState == 'connected') {
-      
       client.publish(topic, message, options, function (err) {
         if (err) {
           plugin.log('ERROR publishing topic=' + topic + ': ' + util.inspect(err));
@@ -249,8 +248,7 @@ module.exports = async function(plugin) {
           }
         }
       });
-    } 
-    if (clientState == 'error' || clientState == 'offline' || clientState == 'disconnect')  {
+    } else {
       if (bufferlength > 0) {
         writeBuffer(topic, message, options, bufferlength);
       }
@@ -270,7 +268,7 @@ module.exports = async function(plugin) {
       buffer[topic].data.shift();
       buffer[topic].data.push(message);
     }
-    plugin.log('Buffer ' + util.inspect(buffer[topic]), 2);
+    //plugin.log('Buffer ' + util.inspect(buffer[topic]), 2);
   }
 
   function addChannel({ id, topic }) {
