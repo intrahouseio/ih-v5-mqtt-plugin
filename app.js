@@ -10,6 +10,8 @@ const converter = require('./lib/converter');
 const Scanner = require('./lib/scanner');
 
 module.exports = async function(plugin) {
+  let buffer = {};
+  let clientState = 'offline';
   const scanner = new Scanner(plugin);
 
   // Подготовить каналы для подписки на брокере
@@ -19,6 +21,7 @@ module.exports = async function(plugin) {
   // Подготовить каналы для публикации - нужно подписаться на сервере IH на эти устройства
   const filter = converter.saveExtraGetFilter(plugin.extra);
   if (filter) {
+    
     // plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
     plugin.onSub('devices', filter, data => {
       if (!data) return;
@@ -33,8 +36,8 @@ module.exports = async function(plugin) {
           if (pobj && pobj.topic) {
             let topic = pobj.topic;
             let message = formMessage(pobj.message, item.value);
-
-            publish(topic, message, pobj.options);
+            
+            publishExtra(topic, item.value.toString(), pobj.options, pobj.bufferlength);
             plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options=' + util.inspect(pobj.options), 2);
           } else {
             plugin.log('NOT found extra for ' + util.inspect(item));
@@ -49,6 +52,7 @@ module.exports = async function(plugin) {
   }
 
   let client = '';
+  
   connect();
 
   function connect() {
@@ -68,8 +72,13 @@ module.exports = async function(plugin) {
     // Подключение успешно
     client.on('connect', () => {
       plugin.log('Connected', 1);
+      clientState = 'connected';
       subscribe(converter.getSubMapTopics());
       subscribe(converter.getCmdMapTopics());
+      for (let key in buffer) {
+        publish(key, JSON.stringify(buffer[key].data), buffer[key].options);
+        //plugin.log("topic:" + key + JSON.stringify(buffer[key].data) + buffer[key].options);
+      }
     });
 
     // Получены данные
@@ -84,12 +93,25 @@ module.exports = async function(plugin) {
 
     // Ошибка
     client.on('error', err => {
-      plugin.exit(1, 'Connection error:  ' + JSON.stringify(err));
+      plugin.log('Host is offline');
+      clientState = 'error';
+      client.reconnect();
+      //plugin.exit(1, 'Connection error:  ' + JSON.stringify(err));
     });
 
     client.on('offline', () => {
-      plugin.exit(1, 'Connection error: Host is offline');
-      // plugin.log('Host is offline');
+      plugin.log('Host is offline');
+      clientState = 'offline';
+      client.reconnect();
+      //plugin.exit(1, 'Connection error: Host is offline');
+      // 
+    });
+
+    client.on('reconnecting', () => {
+      plugin.log('Reconnecting');
+      clientState = 'reconnect';
+      //plugin.exit(1, 'Connection error: Host is offline');
+      // 
     });
 
     // Сообщения от библиотеки для отладки
@@ -111,7 +133,14 @@ module.exports = async function(plugin) {
       });
     }
 
-    const data = converter.convertIncoming(topic, message);
+    let data;
+    const arch = Array.isArray(JSON.parse(message));
+    if (arch) {
+      data = converter.convertIncomingArchive(topic, message);
+    } else {
+      data = converter.convertIncoming(topic, message);
+    }
+    
     if (data) {
       // Если value - это объект и нужно извлекать время - в каждом элементе извлечь время
       try {
@@ -120,7 +149,12 @@ module.exports = async function(plugin) {
           formAndSendCommand(data[0]);
         } else {
           if (plugin.params.extract_ts && plugin.params.ts_field) processTimestamp(data);
-          plugin.sendData(data);
+          if (arch) {
+            plugin.sendArchive(data);
+          } else {
+            plugin.sendData(data);
+          }
+          
         }
       } catch (e) {
         plugin.log('Time process error, expected JSON with "' + plugin.params.ts_field + '" property');
@@ -183,12 +217,48 @@ module.exports = async function(plugin) {
 
   function publish(topic, message, options) {
     if (!topic || !message) return;
-    plugin.log('PUBLISH: ' + topic + ' ' + message, 2);
-    client.publish(topic, message, options, err => {
+    client.publish(topic, message, options, function (err) {
       if (err) {
         plugin.log('ERROR publishing topic=' + topic + ': ' + util.inspect(err));
       }
     });
+  }
+
+  function publishExtra(topic, message, options, bufferlength) {
+    if (!topic || !message) return;
+    plugin.log('PUBLISH: ' + topic + ' ' + message + ' '+clientState, 2);
+    if (clientState == 'connected') {
+      
+      client.publish(topic, message, options, function (err) {
+        if (err) {
+          plugin.log('ERROR publishing topic=' + topic + ': ' + util.inspect(err));
+          if (bufferlength > 0) {
+            writebuffer(topic, message, options, bufferlength);
+          }
+        }
+      });
+    } 
+    if (clientState == 'error' || clientState == 'offline')  {
+      if (bufferlength > 0) {
+        writeBuffer(topic, message, options, bufferlength);
+      }
+    }
+  }
+
+  function writeBuffer (topic, message, options, bufferlength) {
+    plugin.log('Buffer ADD' + topic + ': ' + message, 2);
+    if (buffer[topic] == undefined) {
+      buffer[topic] = {};
+      buffer[topic].data = [];
+      buffer[topic].options = options;
+    }
+    if (buffer[topic].data.length < bufferlength) {
+      buffer[topic].data.push({value:message, ts:Date.now()});
+    } else {
+      buffer[topic].data.shift();
+      buffer[topic].data.push({value:message, ts:Date.now()});
+    }
+    plugin.log('Buffer ' + util.inspect(buffer[topic]), 2);
   }
 
   function addChannel({ id, topic }) {

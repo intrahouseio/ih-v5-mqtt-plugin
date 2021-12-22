@@ -55,9 +55,24 @@
             { "id": 2, "title": "2" }
           ],
           "width": 100,
-          "hide": "data.extype.id != 'pub'"
+          "hide": "data.extype.id != 'pub'",
+          "default": 0
         },
-        { "prop": "retain", "title": "Retain", "type": "cb", "width": 100, "hide": "data.extype.id != 'pub'" }
+        { 
+          "prop": "retain", 
+          "title": "Retain", 
+          "type": "cb", 
+          "width": 100, 
+          "hide": "data.extype.id != 'pub'" 
+        },
+        {
+          "prop": "bufferlength",
+          "title": "Глубина буфера",
+          "type": "number",
+          "width": 100,
+          "hide": "data.extype.id != 'pub'",
+          "default": 0
+        }
       ]
     }
   ]
