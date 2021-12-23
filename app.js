@@ -35,9 +35,14 @@ module.exports = async function(plugin) {
           // let pobj = converter.convertOutgoing(item.did + '.' + item.prop, item.value);
           if (pobj && pobj.topic) {
             let topic = pobj.topic;
-            let message = formMessage(pobj.message, item.value);
-            
-            publishExtra(topic, item.value.toString(), pobj.options, pobj.bufferlength);
+            let message = '';
+            //let message = formMessage(pobj.message, item.value);
+            if (pobj.bufferlength > 0) {
+              message = JSON.stringify({value:item.value, ts:Date.now()});
+            } else {
+              message = item.value.toString();
+            }
+            publishExtra(topic, message, pobj.options, pobj.bufferlength);
             plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options=' + util.inspect(pobj.options), 2);
           } else {
             plugin.log('NOT found extra for ' + util.inspect(item));
@@ -51,7 +56,7 @@ module.exports = async function(plugin) {
     // plugin.log('SEND: '+util.inspect({ type: 'sub', id: 'main', event: 'devices', filter }));
   }
 
-  let client = '';
+  let client = {};
   
   connect();
 
@@ -107,9 +112,17 @@ module.exports = async function(plugin) {
       // 
     });
 
-    client.on('reconnecting', () => {
+    client.on('disconnect', () => {
+      plugin.log('Broker disconected client');
+      clientState = 'disconnect';
+      client.reconnect();
+      //plugin.exit(1, 'Connection error: Host is offline');
+      // 
+    });
+
+    client.on('reconnect', () => {
       plugin.log('Reconnecting');
-      clientState = 'reconnect';
+      //clientState = 'reconnect';
       //plugin.exit(1, 'Connection error: Host is offline');
       // 
     });
@@ -226,9 +239,7 @@ module.exports = async function(plugin) {
 
   function publishExtra(topic, message, options, bufferlength) {
     if (!topic || !message) return;
-    plugin.log('PUBLISH: ' + topic + ' ' + message + ' '+clientState, 2);
     if (clientState == 'connected') {
-      
       client.publish(topic, message, options, function (err) {
         if (err) {
           plugin.log('ERROR publishing topic=' + topic + ': ' + util.inspect(err));
@@ -237,8 +248,7 @@ module.exports = async function(plugin) {
           }
         }
       });
-    } 
-    if (clientState == 'error' || clientState == 'offline')  {
+    } else {
       if (bufferlength > 0) {
         writeBuffer(topic, message, options, bufferlength);
       }
@@ -253,12 +263,12 @@ module.exports = async function(plugin) {
       buffer[topic].options = options;
     }
     if (buffer[topic].data.length < bufferlength) {
-      buffer[topic].data.push({value:message, ts:Date.now()});
+      buffer[topic].data.push(message);
     } else {
       buffer[topic].data.shift();
-      buffer[topic].data.push({value:message, ts:Date.now()});
+      buffer[topic].data.push(message);
     }
-    plugin.log('Buffer ' + util.inspect(buffer[topic]), 2);
+    //plugin.log('Buffer ' + util.inspect(buffer[topic]), 2);
   }
 
   function addChannel({ id, topic }) {
