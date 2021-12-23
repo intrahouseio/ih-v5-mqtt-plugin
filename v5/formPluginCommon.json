@@ -28,6 +28,18 @@
       "type": "droplist",
       "default": "mqtt",
       "data":[{"id":"mqtt", "title":"mqtt"}, {"id":"mqtts", "title":"mqtts"}]
+    },
+    {
+      "prop": "clientId",
+      "title": "ClientId",
+      "type": "input",
+      "default": "Client1"
+    },
+    {
+      "prop": "clean",
+      "title": "CleanSession",
+      "type": "cb",
+      "default": true
     }
 
   ],

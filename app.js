@@ -61,10 +61,10 @@ module.exports = async function(plugin) {
   connect();
 
   function connect() {
-    let { host, port, use_password, username, password, protocol } = plugin.params;
+    let { host, port, use_password, username, password, protocol, clean, clientId } = plugin.params;
     if (!protocol || protocol.length < 3) protocol = '';
-
-    const options = { host, port, protocol };
+    plugin.log("Params" + util.inspect(plugin.params));
+    const options = { host, port, protocol, clean, clientId};
     let authStr = '';
     if (use_password) {
       Object.assign(options, { username, password });
