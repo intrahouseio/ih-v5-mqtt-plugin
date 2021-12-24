@@ -147,7 +147,14 @@ module.exports = async function(plugin) {
     }
 
     let data;
-    const arch = Array.isArray(JSON.parse(message));
+    let arch; 
+    
+    try {
+      arch = Array.isArray(JSON.parse(message));
+    } catch (e) {
+      plugin.log('Invalid JSON.parse: '+message)
+    }
+    
     if (arch) {
       data = converter.convertIncomingArchive(topic, message);
     } else {
