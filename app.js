@@ -100,14 +100,12 @@ module.exports = async function(plugin) {
     client.on('error', err => {
       plugin.log('Host is offline');
       clientState = 'error';
-      client.reconnect();
       //plugin.exit(1, 'Connection error:  ' + JSON.stringify(err));
     });
 
     client.on('offline', () => {
       plugin.log('Host is offline');
       clientState = 'offline';
-      client.reconnect();
       //plugin.exit(1, 'Connection error: Host is offline');
       // 
     });
@@ -115,7 +113,6 @@ module.exports = async function(plugin) {
     client.on('disconnect', () => {
       plugin.log('Broker disconected client');
       clientState = 'disconnect';
-      client.reconnect();
       //plugin.exit(1, 'Connection error: Host is offline');
       // 
     });
@@ -154,7 +151,7 @@ module.exports = async function(plugin) {
     } catch (e) {
       plugin.log('Invalid JSON.parse: '+message)
     }
-    
+
     if (arch) {
       data = converter.convertIncomingArchive(topic, message);
     } else {
