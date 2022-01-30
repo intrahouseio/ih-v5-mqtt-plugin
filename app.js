@@ -19,49 +19,49 @@ module.exports = async function(plugin) {
   // Подготовить каналы для подписки на брокере
   converter.createSubMap(plugin.channels);
   converter.createCmdMap(plugin.extraChannels);
-
-  
   // Подготовить каналы для публикации - нужно подписаться на сервере IH на эти устройства
-  const filter = converter.saveExtraGetFilter(plugin.extraChannels);
-  if (filter) {
-    plugin.log("Filter: "+ util.inspect(filter));
-    // plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
-    plugin.onSub('devices', filter, data => {
-      if (!data) return;
-      data.forEach(item => {
-        // item: {did, prop, value}
-        try {
-          let pobj;
-          if (item.did && item.prop) {
-            pobj = converter.getPubMapItem(item.did + '.' + item.prop);
-          }
-          // let pobj = converter.convertOutgoing(item.did + '.' + item.prop, item.value);
-          if (pobj && pobj.topic) {
-            let topic = pobj.topic;
-            let message = '';
-            //let message = formMessage(pobj.message, item.value);
-            if (pobj.bufferlength > 0) {
-              message = JSON.stringify({value:item.value, ts:Date.now()});
-            } else {
-              message = item.value.toString();
-            }
-            extraChannels[item.did] = { topic, message, options: pobj.options};
-            //plugin.log('extraChannels ' + util.inspect(extraChannels));
-            publishExtra(topic, message, pobj.options, pobj.bufferlength);
-           
-          } else {
-            plugin.log('NOT found extra for ' + util.inspect(item));
-          }
-        } catch (e) {
-          const errStr = 'PUBLISH for ' + util.inspect(item) + ' ERROR: ' + util.inspect(e);
-          plugin.log(errStr);
-        }
-      });
-    });
-    
-    // plugin.log('SEND: '+util.inspect({ type: 'sub', id: 'main', event: 'devices', filter }));
   
-   
+  subIhExtraChannels(converter.saveExtraGetFilter(plugin.extraChannels));
+
+  function subIhExtraChannels(filter) {
+    if (filter) {
+      plugin.log("Filter: "+ util.inspect(filter));
+      // plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
+      plugin.onSub('devices', filter, data => {
+        if (!data) return;
+        data.forEach(item => {
+          // item: {did, prop, value}
+          try {
+            let pobj;
+            if (item.did && item.prop) {
+              pobj = converter.getPubMapItem(item.did + '.' + item.prop);
+            }
+            // let pobj = converter.convertOutgoing(item.did + '.' + item.prop, item.value);
+            if (pobj && pobj.topic) {
+              let topic = pobj.topic;
+              let message = '';
+              //let message = formMessage(pobj.message, item.value);
+              if (pobj.bufferlength > 0) {
+                message = JSON.stringify({value:item.value, ts:Date.now()});
+              } else {
+                message = item.value.toString();
+              }
+              extraChannels[item.did] = { topic, message, options: pobj.options};
+              //plugin.log('extraChannels ' + util.inspect(extraChannels));
+              publishExtra(topic, message, pobj.options, pobj.bufferlength);
+             
+            } else {
+              plugin.log('NOT found extra for ' + util.inspect(item));
+            }
+          } catch (e) {
+            const errStr = 'PUBLISH for ' + util.inspect(item) + ' ERROR: ' + util.inspect(e);
+            plugin.log(errStr);
+          }
+        });
+      });
+      
+      // plugin.log('SEND: '+util.inspect({ type: 'sub', id: 'main', event: 'devices', filter })); 
+    }
   }
 
   let client = {};
@@ -471,6 +471,7 @@ module.exports = async function(plugin) {
     converter.cmdMap.clear();
     converter.createCmdMap(plugin.extraChannels);
     subscribe(converter.getCmdMapTopics());
+    subIhExtraChannels(converter.saveExtraGetFilter(plugin.extraChannels));
   });
 
   plugin.on('exit', () => {
