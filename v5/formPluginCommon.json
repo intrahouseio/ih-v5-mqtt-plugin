@@ -30,17 +30,19 @@
       "data":[{"id":"mqtt", "title":"mqtt"}, {"id":"mqtts", "title":"mqtts"}]
     },
     {
-      "prop": "clientId",
-      "title": "ClientId",
-      "type": "input",
-      "default": "Client1"
-    },
-    {
       "prop": "clean",
       "title": "CleanSession",
       "type": "cb",
       "default": true
+    },
+    {
+      "prop": "clientId",
+      "title": "ClientId",
+      "type": "input",
+      "default": "Client1",
+      "hide": "data.p1.clean"
     }
+    
 
   ],
   "p2": [
@@ -64,7 +66,35 @@
       "default": "password",
       "hide": "!data.p2.use_password"
     },
- 
+    {
+      "prop": "willtopic",
+      "title": "Will Topic",
+      "type": "input",
+      "default": "status"
+    },
+    {
+      "prop": "willpayload",
+      "title": "Will Payload",
+      "type": "input",
+      "default": "disconnected"
+    },
+    {
+      "prop": "willqos",
+      "title": "Will Qos",
+      "type": "droplist",
+      "data": [
+        { "id": 0, "title": "0" },
+        { "id": 1, "title": "1" },
+        { "id": 2, "title": "2" }],
+      "default": 0
+    },
+    { 
+      "prop": "willretain", 
+      "title": "Will Retain", 
+      "type": "cb", 
+      "default": false
+    },
+
     {
       "prop": "extract_ts",
       "title": "$extract_ts",

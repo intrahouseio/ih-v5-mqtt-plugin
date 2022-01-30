@@ -5,23 +5,26 @@
 
 const util = require('util');
 const mqtt = require('mqtt');
+//const pluginApi = require('ih-plugin-api')();
 
 const converter = require('./lib/converter');
 const Scanner = require('./lib/scanner');
 
 module.exports = async function(plugin) {
   let buffer = {};
+  let extraChannels = {};
   let clientState = 'offline';
   const scanner = new Scanner(plugin);
 
   // Подготовить каналы для подписки на брокере
   converter.createSubMap(plugin.channels);
-  converter.createCmdMap(plugin.extra);
+  converter.createCmdMap(plugin.extraChannels);
 
+  
   // Подготовить каналы для публикации - нужно подписаться на сервере IH на эти устройства
-  const filter = converter.saveExtraGetFilter(plugin.extra);
+  const filter = converter.saveExtraGetFilter(plugin.extraChannels);
   if (filter) {
-    
+    plugin.log("Filter: "+ util.inspect(filter));
     // plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
     plugin.onSub('devices', filter, data => {
       if (!data) return;
@@ -42,8 +45,10 @@ module.exports = async function(plugin) {
             } else {
               message = item.value.toString();
             }
+            extraChannels[item.did] = { topic, message, options: pobj.options};
+            //plugin.log('extraChannels ' + util.inspect(extraChannels));
             publishExtra(topic, message, pobj.options, pobj.bufferlength);
-            plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options=' + util.inspect(pobj.options), 2);
+           
           } else {
             plugin.log('NOT found extra for ' + util.inspect(item));
           }
@@ -53,18 +58,33 @@ module.exports = async function(plugin) {
         }
       });
     });
+    
     // plugin.log('SEND: '+util.inspect({ type: 'sub', id: 'main', event: 'devices', filter }));
+  
+   
   }
 
   let client = {};
   
   connect();
-
+  
   function connect() {
-    let { host, port, use_password, username, password, protocol, clean, clientId } = plugin.params;
+    
+    const { host, port, use_password, username, password, protocol, clean, clientId, willtopic, willpayload, willqos, willretain } = plugin.params;
+    const will = {};
+    will.topic = willtopic;
+    will.payload = willpayload;
+    will.qos = willqos;
+    will.retain = willretain;
+    let options;
     if (!protocol || protocol.length < 3) protocol = '';
     plugin.log("Params" + util.inspect(plugin.params));
-    const options = { host, port, protocol, clean, clientId};
+    if (clean == 1) {
+      options = { host, port, protocol, will};
+    } else {
+      options = { host, port, protocol, clean, clientId, will};
+    }
+    
     let authStr = '';
     if (use_password) {
       Object.assign(options, { username, password });
@@ -78,11 +98,13 @@ module.exports = async function(plugin) {
     client.on('connect', () => {
       plugin.log('Connected', 1);
       clientState = 'connected';
+      for (let key in extraChannels) {
+        publish(extraChannels[key].topic, extraChannels[key].message, extraChannels[key].options);  
+      }
       subscribe(converter.getSubMapTopics());
       subscribe(converter.getCmdMapTopics());
       for (let key in buffer) {
         publish(key, JSON.stringify(buffer[key].data), buffer[key].options);
-        //plugin.log("topic:" + key + JSON.stringify(buffer[key].data) + buffer[key].options);
       }
     });
 
@@ -100,28 +122,21 @@ module.exports = async function(plugin) {
     client.on('error', err => {
       plugin.log('Host is offline');
       clientState = 'error';
-      //plugin.exit(1, 'Connection error:  ' + JSON.stringify(err));
     });
 
     client.on('offline', () => {
       plugin.log('Host is offline');
       clientState = 'offline';
-      //plugin.exit(1, 'Connection error: Host is offline');
-      // 
     });
 
     client.on('disconnect', () => {
       plugin.log('Broker disconected client');
       clientState = 'disconnect';
-      //plugin.exit(1, 'Connection error: Host is offline');
-      // 
+
     });
 
     client.on('reconnect', () => {
       plugin.log('Reconnecting');
-      //clientState = 'reconnect';
-      //plugin.exit(1, 'Connection error: Host is offline');
-      // 
     });
 
     // Сообщения от библиотеки для отладки
@@ -201,6 +216,18 @@ module.exports = async function(plugin) {
     });
   }
 
+  function unsubscribe(topics) {
+    if (!topics) return;
+    if (!Array.isArray(topics)) topics = [topics];
+
+    plugin.log('UNSUBSCRIBE: ' + String(topics));
+    client.unsubscribe(topics, err => {
+      if (err) {
+        plugin.log('ERROR unsubscribing: ' + util.inspect(err));
+      }
+    });
+  }
+
   function publishAct(item) {
     // if (!item.topic) return;
     let topic = item.pubtopic;
@@ -235,6 +262,7 @@ module.exports = async function(plugin) {
   function publish(topic, message, options) {
     if (!topic || !message) return;
     client.publish(topic, message, options, function (err) {
+      plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options=' + util.inspect(options), 2);
       if (err) {
         plugin.log('ERROR publishing topic=' + topic + ': ' + util.inspect(err));
       }
@@ -245,6 +273,7 @@ module.exports = async function(plugin) {
     if (!topic || !message) return;
     if (clientState == 'connected') {
       client.publish(topic, message, options, function (err) {
+        plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options=' + util.inspect(options), 2);
         if (err) {
           plugin.log('ERROR publishing topic=' + topic + ': ' + util.inspect(err));
           if (bufferlength > 0) {
@@ -257,6 +286,7 @@ module.exports = async function(plugin) {
         writeBuffer(topic, message, options, bufferlength);
       }
     }
+    
   }
 
   function writeBuffer (topic, message, options, bufferlength) {
@@ -420,16 +450,27 @@ module.exports = async function(plugin) {
 
   // При изменении каналов, recs = {Array of Objects}
   plugin.onChange('channels', recs => {
-    // plugin.log('onChange '+util.inspect(recs))
     recs.forEach(rec => {
       if (rec.op == 'add') {
+        plugin.log('onChange addChannels '+util.inspect(recs), 2);
         addChannel(rec);
       } else if (rec.op == 'update') {
+        plugin.log('onChange updateChannels '+util.inspect(recs), 2);
         updateChannel(rec);
       } else if (rec.op == 'delete') {
+        plugin.log('onChange deleteChannels '+util.inspect(recs), 2);
         deleteChannel(rec);
       }
     });
+  });
+
+  plugin.onChange('extra', async (recs) => {
+    plugin.log('onChange addExtra '+util.inspect(recs), 2);
+    unsubscribe(converter.getCmdMapTopics());
+    plugin.extraChannels = await plugin.extra.get();
+    converter.cmdMap.clear();
+    converter.createCmdMap(plugin.extraChannels);
+    subscribe(converter.getCmdMapTopics());
   });
 
   plugin.on('exit', () => {
