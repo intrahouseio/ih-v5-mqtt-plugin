@@ -9,6 +9,7 @@ const mqtt = require('mqtt');
 
 const converter = require('./lib/converter');
 const Scanner = require('./lib/scanner');
+const { disconnect } = require('process');
 
 module.exports = async function(plugin) {
   let buffer = {};
@@ -72,8 +73,8 @@ module.exports = async function(plugin) {
     
     const { host, port, use_password, username, password, protocol, clean, clientId, willtopic, willpayload, willqos, willretain } = plugin.params;
     const will = {};
-    will.topic = willtopic;
-    will.payload = willpayload;
+    will.topic = willtopic || "status";
+    will.payload = willpayload || "disconnected";
     will.qos = willqos;
     will.retain = willretain;
     let options;
