@@ -9,7 +9,7 @@ const mqtt = require('mqtt');
 
 const converter = require('./lib/converter');
 const Scanner = require('./lib/scanner');
-const { disconnect } = require('process');
+//const { disconnect } = require('process');
 
 module.exports = async function(plugin) {
   let buffer = {};
@@ -26,7 +26,6 @@ module.exports = async function(plugin) {
 
   function subIhExtraChannels(filter) {
     if (filter) {
-      plugin.log("Filter: "+ util.inspect(filter));
       // plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
       plugin.onSub('devices', filter, data => {
         if (!data) return;
@@ -99,6 +98,7 @@ module.exports = async function(plugin) {
     client.on('connect', () => {
       plugin.log('Connected', 1);
       clientState = 'connected';
+      publish(plugin.params.willtopic, plugin.params.recoverypayload || "connected",  {retain:plugin.params.willretain, qos:plugin.params.willqos})
       for (let key in extraChannels) {
         publish(extraChannels[key].topic, extraChannels[key].message, extraChannels[key].options);  
       }
@@ -263,9 +263,9 @@ module.exports = async function(plugin) {
   function publish(topic, message, options) {
     if (!topic || !message) return;
     client.publish(topic, message, options, function (err) {
-      plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options=' + util.inspect(options), 2);
+      plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options = ' + util.inspect(options), 2);
       if (err) {
-        plugin.log('ERROR publishing topic=' + topic + ': ' + util.inspect(err));
+        plugin.log('ERROR publishing topic = ' + topic + ': ' + util.inspect(err));
       }
     });
   }
@@ -274,9 +274,9 @@ module.exports = async function(plugin) {
     if (!topic || !message) return;
     if (clientState == 'connected') {
       client.publish(topic, message, options, function (err) {
-        plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options=' + util.inspect(options), 2);
+        plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options = ' + util.inspect(options), 2);
         if (err) {
-          plugin.log('ERROR publishing topic=' + topic + ': ' + util.inspect(err));
+          plugin.log('ERROR publishing topic = ' + topic + ': ' + util.inspect(err));
           if (bufferlength > 0) {
             writebuffer(topic, message, options, bufferlength);
           }
@@ -291,7 +291,7 @@ module.exports = async function(plugin) {
   }
 
   function writeBuffer (topic, message, options, bufferlength) {
-    plugin.log('Buffer ADD' + topic + ': ' + message, 2);
+    plugin.log('Buffer ADD: ' + topic + ': ' + message, 2);
     if (buffer[topic] == undefined) {
       buffer[topic] = {};
       buffer[topic].data = [];

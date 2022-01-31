@@ -79,6 +79,12 @@
       "default": "disconnected"
     },
     {
+      "prop": "recoverypayload",
+      "title": "Recovery Payload",
+      "type": "input",
+      "default": "connected"
+    },
+    {
       "prop": "willqos",
       "title": "Will Qos",
       "type": "droplist",
