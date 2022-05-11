@@ -12,29 +12,29 @@
   "p2": [
     { "prop": "chan", "title": "$Channel", "type": "input" },
     { "prop": "title", "title": "$Name", "type": "input" },
-    { "prop": "devpropname", "title": "Свойство устройства при автоматической привязке", "type": "input" }
+    { "prop": "devpropname", "title": "$devpropname", "type": "input" }
   ],
 
   "p3": [
   
-    { "prop": "r", "title": "Чтение (подписка)", "type": "cb" },
-    { "prop": "w", "title": "Запись (публикация)", "type": "cb" }
+    { "prop": "r", "title": "$Read", "type": "cb" },
+    { "prop": "w", "title": "$Write", "type": "cb" }
   ],
 
   "p4": [
-    { "prop": "topic", "title": "Топик для подписки", "type": "input" },
-    { "prop": "calc", "title": "Формула извлечения значения", "type": "input" }
+    { "prop": "topic", "title": "$subtopic", "type": "input" },
+    { "prop": "calc", "title": "$Devhard_Calc", "type": "input" }
   ],
 
   "p5": [
 
-    { "prop": "pubtopic", "title": "Топик для публикации", "type": "input" },
-    { "prop": "pubmessage", "title": "Сообщение для публикации", "type": "input" }
+    { "prop": "pubtopic", "title": "$pubtopic", "type": "input" },
+    { "prop": "pubmessage", "title": "$pubmessage", "type": "input" }
   ],
 
   "ptest": [
-    { "prop": "header_testwrite", "title": "Тест записи", "type": "header" },
-    { "prop": "testValue", "title": "Сообщение для публикации", "type": "input" },
+    { "prop": "header_testwrite", "title": "$header_testwrite", "type": "header" },
+    { "prop": "testValue", "title": "$testValue", "type": "input" },
 
     {
       "prop": "writeButton",
@@ -46,7 +46,7 @@
   ],
 
   "p9": [
-    { "prop": "realtime_chan_str", "title": "Канал", "type": "text" },
-    { "prop": "realtime_dev_str", "title": "Устройство", "type": "text" }
+    { "prop": "realtime_chan_str", "title": "$realtime_chan_str", "type": "text" },
+    { "prop": "realtime_dev_str", "title": "$realtime_dev_str", "type": "text" }
   ]
 }

@@ -20,27 +20,27 @@
 
         {
           "prop": "prop",
-          "title": "Свойство или команда",
+          "title": "$prop",
           "type": "input",
           "width": 150
         },
 
         {
           "prop": "extype",
-          "title": "Операция",
+          "title": "$extype",
           "type": "droplist",
           "width": 200,
           "data": [
-            { "id": "pub", "title": "Публиковать значение" },
-            { "id": "cmd", "title": "Принять команду" },
-            { "id": "set", "title": "Принять значение" }
+            { "id": "pub", "title": "$pub" },
+            { "id": "cmd", "title": "$cmd" },
+            { "id": "set", "title": "$set" }
           ]
         },
 
-        { "prop": "topic", "title": "Топик", "type": "input", "width": 250 },
+        { "prop": "topic", "title": "$topic", "type": "input", "width": 250 },
         {
           "prop": "message",
-          "title": "Сообщение",
+          "title": "$message",
           "type": "input",
           "width": 250,
           "hide": "data.extype.id != 'cmd'"
@@ -67,7 +67,7 @@
         },
         {
           "prop": "bufferlength",
-          "title": "Глубина буфера",
+          "title": "$bufferlength",
           "type": "number",
           "width": 100,
           "hide": "data.extype.id != 'pub'",

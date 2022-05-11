@@ -23,7 +23,7 @@
       "default": "1883"
     },
     {
-      "prop": "protocol",
+      "prop": "$protocol",
       "title": "Protocol",
       "type": "droplist",
       "default": "mqtt",
@@ -132,12 +132,12 @@
       "prop": "unitsTreeTable",
 
       "columns": [
-        { "prop": "name", "title": "ID", "type": "text", "width": 150 },
-        { "prop": "state", "title": "Состояние", "type": "text", "width": 150 },
-        { "prop": "laststart", "title": "Время запуска", "type": "text", "width": 150 },
-        { "prop": "laststop", "title": "Время останова", "type": "text", "width": 150 },
-        { "prop": "uptime", "title": "Uptime", "type": "text", "width": 150 },
-        { "prop": "error", "title": "Ошибка", "type": "text", "width": 250 }
+        { "prop": "name", "title": "$name", "type": "text", "width": 150 },
+        { "prop": "state", "title": "$state", "type": "text", "width": 150 },
+        { "prop": "laststart", "title": "$laststart", "type": "text", "width": 150 },
+        { "prop": "laststop", "title": "$laststop", "type": "text", "width": 150 },
+        { "prop": "uptime", "title": "$uptime", "type": "text", "width": 150 },
+        { "prop": "error", "title": "$error", "type": "text", "width": 250 }
       ]
     }
   ]
