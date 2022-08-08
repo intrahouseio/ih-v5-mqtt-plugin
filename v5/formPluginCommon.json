@@ -24,7 +24,7 @@
     },
     {
       "prop": "protocol",
-      "title": "Protocol",
+      "title": "$Protocol",
       "type": "droplist",
       "default": "mqtt",
       "data":[{"id":"mqtt", "title":"mqtt"}, {"id":"mqtts", "title":"mqtts"}]
