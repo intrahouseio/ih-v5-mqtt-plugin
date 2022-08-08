@@ -25,6 +25,7 @@ module.exports = async function(plugin) {
   subIhExtraChannels(converter.saveExtraGetFilter(plugin.extraChannels));
 
   function subIhExtraChannels(filter) {
+    plugin.log("filter" + util.inspect(filter));
     if (filter) {
       // plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
       plugin.onSub('devices', filter, data => {
@@ -70,7 +71,7 @@ module.exports = async function(plugin) {
   
   function connect() {
     
-    const { host, port, use_password, username, password, protocol, clean, clientId, willtopic, willpayload, willqos, willretain } = plugin.params;
+    const { host, port, use_password, username, password, protocol, clean, clientId, willtopic, willpayload, willqos, willretain, useselfsigned, key, cert } = plugin.params;
     const will = {};
     will.topic = willtopic || "status";
     will.payload = willpayload || "disconnected";
@@ -91,6 +92,15 @@ module.exports = async function(plugin) {
       authStr = 'username = ' + username;
     }
 
+    if (useselfsigned) {
+      const fs = require('fs');
+      Object.assign(options, {
+        key: fs.readFileSync(key),
+        cert: fs.readFileSync(cert),
+        rejectUnauthorized: false
+      });
+    }
+    
     plugin.log(`Start connecting ${protocol}: ${host}:${port} ${authStr}`, 1);
     client = mqtt.connect(options);
 

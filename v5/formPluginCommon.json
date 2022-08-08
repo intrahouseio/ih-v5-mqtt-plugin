@@ -23,11 +23,32 @@
       "default": "1883"
     },
     {
-      "prop": "$protocol",
+      "prop": "protocol",
       "title": "Protocol",
       "type": "droplist",
       "default": "mqtt",
       "data":[{"id":"mqtt", "title":"mqtt"}, {"id":"mqtts", "title":"mqtts"}]
+    },
+    {
+      "prop": "useselfsigned",
+      "title": "Use self signed sertificate",
+      "type": "cb",
+      "default": false,
+      "hide": "data.p1.protocol.id != \"mqtts\"" 
+    },
+    {
+      "prop": "key",
+      "title": "Private KEY file path",
+      "type": "input",
+      "default": "/",
+      "hide": "data.p1.protocol.id != \"mqtts\" || !data.p1.useselfsigned" 
+    },
+    {
+      "prop": "cert",
+      "title": "Public CERT file path",
+      "type": "input",
+      "default": "/",
+      "hide": "data.p1.protocol.id != \"mqtts\" || !data.p1.useselfsigned" 
     },
     {
       "prop": "clean",
