@@ -25,7 +25,7 @@ module.exports = async function(plugin) {
   subIhExtraChannels(converter.saveExtraGetFilter(plugin.extraChannels));
 
   function subIhExtraChannels(filter) {
-    plugin.log("filter" + util.inspect(filter));
+    plugin.log("filter" + util.inspect(filter), 1);
     if (filter) {
       // plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
       plugin.onSub('devices', filter, data => {
@@ -52,7 +52,7 @@ module.exports = async function(plugin) {
               publishExtra(topic, message, pobj.options, pobj.bufferlength);
              
             } else {
-              plugin.log('NOT found extra for ' + util.inspect(item));
+              plugin.log('NOT found extra for ' + util.inspect(item), 1);
             }
           } catch (e) {
             const errStr = 'PUBLISH for ' + util.inspect(item) + ' ERROR: ' + util.inspect(e);
@@ -106,7 +106,7 @@ module.exports = async function(plugin) {
 
     // Подключение успешно
     client.on('connect', () => {
-      plugin.log('Connected', 1);
+      plugin.log('Connected');
       clientState = 'connected';
       publish(plugin.params.willtopic, plugin.params.recoverypayload || "connected",  {retain:plugin.params.willretain, qos:plugin.params.willqos})
       for (let key in extraChannels) {
@@ -122,7 +122,7 @@ module.exports = async function(plugin) {
     // Получены данные
     client.on('message', (topic, message) => {
       message = message.toString();
-      plugin.log('GET: ' + topic + ' ' + message);
+      plugin.log('GET: ' + topic + ' ' + message, 1);
       if (scanner.status > 0) {
         scanner.process(topic, message);
       }
@@ -188,7 +188,7 @@ module.exports = async function(plugin) {
       // Если value - это объект и нужно извлекать время - в каждом элементе извлечь время
       try {
         if (data[0] && data[0].cmditem) {
-          plugin.log('Get command todo ' + util.inspect(data[0]));
+          plugin.log('Get command todo ' + util.inspect(data[0]), 1);
           formAndSendCommand(data[0]);
         } else {
           if (plugin.params.extract_ts && plugin.params.ts_field) processTimestamp(data);
@@ -219,7 +219,7 @@ module.exports = async function(plugin) {
     if (!topics) return;
     if (!Array.isArray(topics)) topics = [topics];
 
-    plugin.log('SUBSCRIBE: ' + String(topics));
+    plugin.log('SUBSCRIBE: ' + String(topics), 1);
     client.subscribe(topics, err => {
       if (err) {
         plugin.log('ERROR subscribing: ' + util.inspect(err));
@@ -231,7 +231,7 @@ module.exports = async function(plugin) {
     if (!topics) return;
     if (!Array.isArray(topics)) topics = [topics];
 
-    plugin.log('UNSUBSCRIBE: ' + String(topics));
+    plugin.log('UNSUBSCRIBE: ' + String(topics), 1);
     client.unsubscribe(topics, err => {
       if (err) {
         plugin.log('ERROR unsubscribing: ' + util.inspect(err));
@@ -344,7 +344,7 @@ module.exports = async function(plugin) {
     const topic = converter.findTopicById(oldid);
     const restopic = converter.deleteSubMapItem(topic, oldid);
     if (restopic) {
-      plugin.log('UNSUBSCRIBE: ' + restopic);
+      plugin.log('UNSUBSCRIBE: ' + restopic, 1);
       client.unsubscribe(restopic);
     }
   }
@@ -383,7 +383,7 @@ module.exports = async function(plugin) {
   function scanRequest(scanObj) {
     const scanTopic = scanner.request(scanObj);
     if (scanTopic) {
-      plugin.log('SUBSCRIBE: ' + scanTopic);
+      plugin.log('SUBSCRIBE: ' + scanTopic, 1);
       client.subscribe(scanTopic, err => {
         if (err) {
           plugin.log('ERROR subscribe on ' + scanTopic + ': ' + util.inspect(err));
@@ -397,7 +397,7 @@ module.exports = async function(plugin) {
     const scanTopic = scanner.stop();
     // Отписаться и подписаться заново!!
     if (scanTopic) {
-      plugin.log('UNSUBSCRIBE: ' + scanTopic);
+      plugin.log('UNSUBSCRIBE: ' + scanTopic, 1);
       client.unsubscribe(scanTopic, err => {
         if (!err) {
           // Заново подписаться на топики из каналов
@@ -416,7 +416,7 @@ module.exports = async function(plugin) {
    *                            В команде  должен быть topic и message
    */
   plugin.onAct(message => {
-    plugin.log('ACT data=' + util.inspect(message));
+    plugin.log('ACT data=' + util.inspect(message), 1);
     if (!message.data) return;
     message.data.forEach(item => {
       try {
@@ -441,8 +441,8 @@ module.exports = async function(plugin) {
     let data;
     switch (message.command) {
       case 'publish': // Команда на прямую публикацию
-        if (!message.data) return plugin.log('Not found data: ' + util.inspect(message));
-        if (typeof message.data != 'object') return plugin.log('Invalid data: ' + util.inspect(message));
+        if (!message.data) return plugin.log('Not found data: ' + util.inspect(message), 1);
+        if (typeof message.data != 'object') return plugin.log('Invalid data: ' + util.inspect(message), 1);
 
         data = !Array.isArray(message.data) ? [message.data] : message.data;
         data.forEach(item => {
