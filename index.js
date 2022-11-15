@@ -4,13 +4,18 @@
 
 const util = require('util');
 
-const plugin = require('ih-plugin-api')();
+// const plugin = require('ih-plugin-api')();
 const app = require('./app');
 
 (async () => {
-  plugin.log('Mqtt client has started.', 0);
 
+  let plugin;
   try {
+    const opt = getOptFromArgs();
+    const pluginapi = opt && opt.pluginapi ? opt.pluginapi : 'ih-plugin-api';
+    plugin = require(pluginapi+'/index.js')();
+    plugin.log('Mqtt client has started.', 0);
+
     // Получить каналы для подписки
     plugin.channels = await plugin.channels.get();
     plugin.log('Received channels...');
@@ -27,3 +32,14 @@ const app = require('./app');
     plugin.exit(8, `Error: ${util.inspect(err)}`);
   }
 })();
+
+
+function getOptFromArgs() {
+  let opt;
+  try {
+    opt = JSON.parse(process.argv[2]); //
+  } catch (e) {
+    opt = {};
+  }
+  return opt;
+}
