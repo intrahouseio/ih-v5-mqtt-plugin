@@ -5,11 +5,11 @@
     { "id": "p3", "xs": 4, "class": "main", "table": "units" },
     { "id": "p9", "xs": 12, "class": "main", "table": "unitsTreeTable", "height": "fill" }
   ],
-
   "spacing": 10,
-  "breadcrumbs": { "tree": "plugins" },
 
   "p1": [
+    { "prop": "id", "title": "ID", "type": "text" },
+    { "prop": "name", "title": "$Name", "type": "input" },
     {
       "prop": "host",
       "title": "$host",
@@ -24,7 +24,7 @@
     },
     {
       "prop": "protocol",
-      "title": "$Protocol",
+      "title": "$protocol",
       "type": "droplist",
       "default": "mqtt",
       "data":[{"id":"mqtt", "title":"mqtt"}, {"id":"mqtts", "title":"mqtts"}]
