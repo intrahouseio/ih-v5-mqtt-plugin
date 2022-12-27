@@ -34,6 +34,7 @@
     "startscene":"Run the script when getting the topic",
     "extract_ts":"Extract time from message (for JSON messages)",
     "ts_field":"Time property",
+    "array_as_data":"Accept array as data (or array contains archive)",
     "name" : "ID",
     "state" : "State",
     "laststart" : "Start time",

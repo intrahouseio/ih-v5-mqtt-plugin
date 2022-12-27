@@ -134,6 +134,12 @@
       "type": "input",
       "default": "ts",
       "hide": "!data.p2.extract_ts"
+    },
+    {
+      "prop": "arrayAsData",
+      "title": "$array_as_data",
+      "type": "cb",
+      "default": 0
     }
   ],
   "p3": [

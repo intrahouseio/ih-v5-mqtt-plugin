@@ -4,7 +4,6 @@
 
 const util = require('util');
 
-// const plugin = require('ih-plugin-api')();
 const app = require('./app');
 
 (async () => {
@@ -18,11 +17,11 @@ const app = require('./app');
 
     // Получить каналы для подписки
     plugin.channels = await plugin.channels.get();
-    plugin.log('Received channels...');
+    plugin.log('Received channels...', 1);
 
     // Получить каналы для публикации
     plugin.extraChannels = await plugin.extra.get();
-    plugin.log('Received extra channels...');
+    plugin.log('Received extra channels...', 1);
 
     // Получить параметры и соединиться с брокером
     plugin.params = await plugin.params.get();
@@ -37,7 +36,7 @@ const app = require('./app');
 function getOptFromArgs() {
   let opt;
   try {
-    opt = JSON.parse(process.argv[2]); //
+    opt = JSON.parse(process.argv[2]); 
   } catch (e) {
     opt = {};
   }
