@@ -21,6 +21,8 @@
     "pubtopic" : "Топик для публикации",
     "pubmessage" : "Сообщение для публикации",
     "header_testwrite": "Тест записи",
+    "parenttopic": "Топик для подписки",
+    "parentname": "Название",
     "testValue" : "Сообщение для публикации",
     "realtime_chan_str": "Канал",
     "realtime_dev_str": "Устройство",

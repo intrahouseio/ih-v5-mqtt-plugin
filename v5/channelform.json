@@ -1,5 +1,12 @@
 {
   "grid": [
+    {
+      "id": "pnode",
+      "xs": 12,
+      "class": "main",
+      "table": "devhard_with_parent_node",
+      "hide": "data.pnode.foldertype != 'node'"
+    },
     { "id": "p2", "xs": 8, "class": "main", "table": "devhard" },
     { "id": "p3", "xs": 4, "class": "main", "table": "devhard" },
     { "id": "p4", "xs": 12, "class": "main", "table": "devhard", "hide": "!data.p3.r" },
@@ -8,6 +15,12 @@
     { "id": "ptest", "xs": 12, "class": "main", "table": "devhard", "hide": "!data.p3.w" }
   ],
   "spacing": 4,
+
+  "pnode": [
+    { "prop": "foldertype", "title": "foldertype", "type": "text", "hide": "1==1" },
+    { "prop": "parentname", "title": "$parentname", "type": "text" },
+    { "prop": "parenttopic", "title": "$parenttopic", "type": "text" }
+  ],
 
   "p2": [
     { "prop": "chan", "title": "$Channel", "type": "input" },
@@ -22,7 +35,7 @@
   ],
 
   "p4": [
-    { "prop": "topic", "title": "$subtopic", "type": "input" },
+    { "prop": "topic", "title": "$subtopic", "type": "input", "hide": "data.pnode.foldertype == 'node'" },
     { "prop": "calc", "title": "$Devhard_Calc", "type": "input" }
   ],
 

@@ -11,7 +11,7 @@ const converter = require('./lib/converter');
 const Scanner = require('./lib/scanner');
 // const { disconnect } = require('process');
 
-module.exports = async function(plugin) {
+module.exports = async function (plugin) {
   let buffer = {};
   let extraChannels = {};
   let clientState = 'offline';
@@ -21,12 +21,11 @@ module.exports = async function(plugin) {
   converter.createSubMap(plugin.channels);
   converter.createCmdMap(plugin.extraChannels);
   // Подготовить каналы для публикации - нужно подписаться на сервере IH на эти устройства
-
   subIhExtraChannels(converter.saveExtraGetFilter(plugin.extraChannels));
 
   function subIhExtraChannels(filter) {
-    plugin.log('filter' + util.inspect(filter), 1);
     if (filter) {
+      plugin.log('filter' + util.inspect(filter), 1);
       // plugin.send({ type: 'sub', id: 'main', event: 'devices', filter });
       plugin.onSub('devices', filter, data => {
         if (!data) return;
@@ -84,7 +83,8 @@ module.exports = async function(plugin) {
       willretain,
       useselfsigned,
       key,
-      cert
+      cert,
+      ca
     } = plugin.params;
     const will = {};
     will.topic = willtopic || 'status';
@@ -93,7 +93,7 @@ module.exports = async function(plugin) {
     will.retain = willretain;
 
     let options;
-    plugin.log('Params' + util.inspect(plugin.params));
+    plugin.log('Params' + util.inspect(plugin.params), 1);
     if (clean == 1) {
       options = { host, port, protocol, will };
     } else {
@@ -106,17 +106,23 @@ module.exports = async function(plugin) {
       authStr = 'username = ' + username;
     }
 
-    if (useselfsigned) {
+    if (protocol == "mqtts" && useselfsigned) {
       const fs = require('fs');
       Object.assign(options, {
         key: fs.readFileSync(key),
         cert: fs.readFileSync(cert),
-        rejectUnauthorized: false
+        ca: fs.readFileSync(ca),
+        rejectUnauthorized: true
       });
     }
 
     plugin.log(`Start connecting ${protocol}: ${host}:${port} ${authStr}`, 1);
-    client = mqtt.connect(options);
+    try {
+      client = mqtt.connect(options);
+    } catch (e) {
+      plugin.log("Connection error " + util.inspect(e), 1)
+    }
+
 
     // Подключение успешно
     client.on('connect', () => {
@@ -131,6 +137,8 @@ module.exports = async function(plugin) {
       }
       subscribe(converter.getSubMapTopics());
       subscribe(converter.getCmdMapTopics());
+      subscribe(converter.getSubNodeMapTopics());
+
       for (let key in buffer) {
         publish(key, JSON.stringify(buffer[key].data), buffer[key].options);
       }
@@ -147,19 +155,23 @@ module.exports = async function(plugin) {
     });
 
     // Ошибка
-    client.on('error', err => {
-      plugin.log('Host is offline', 1);
+    client.on('error', async (err) => {
+      //plugin.log('Host is offline', 1);
       clientState = 'error';
+      const channels = await plugin.channels.get();
+      await sendChstatus(1);
     });
 
-    client.on('offline', () => {
-      plugin.log('Host is offline', 1);
+    client.on('offline', async () => {
+      //plugin.log('Host is offline', 1);
       clientState = 'offline';
+      await sendChstatus(1);
     });
 
-    client.on('disconnect', () => {
+    client.on('disconnect', async () => {
       plugin.log('Broker disconected client', 1);
       clientState = 'disconnect';
+      await sendChstatus(1);
     });
 
     client.on('reconnect', () => {
@@ -178,6 +190,11 @@ module.exports = async function(plugin) {
     */
   }
 
+  async function sendChstatus(chstatus) {
+    const channels = await plugin.channels.get();
+    plugin.sendData(channels.map(item => ({ id: item.chan, chstatus })))
+  }
+
   function processMessage(topic, message) {
     if (converter.startsceneMap.has(topic)) {
       converter.startsceneMap.get(topic).forEach(item => {
@@ -190,7 +207,7 @@ module.exports = async function(plugin) {
     // По умолчанию JSON массив рассматривается как архив
     // Флаг arrayAsData сообщает, что JSON массив - это обычные данные (не архив)
     let arch = false;
-    if (!plugin.params.arrayAsData) { 
+    if (!plugin.params.arrayAsData) {
       try {
         arch = Array.isArray(JSON.parse(message));
       } catch (e) {
@@ -202,7 +219,7 @@ module.exports = async function(plugin) {
     if (arch) {
       data = converter.convertIncomingArchive(topic, message);
     } else {
-      data = converter.convertIncoming(topic, message);
+      data = converter.convertIncoming(topic, message, plugin);
     }
 
     if (data) {
@@ -295,7 +312,7 @@ module.exports = async function(plugin) {
     client.publish(topic, message, options, (err) => {
       plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options = ' + util.inspect(options), 2);
       if (err) {
-        plugin.log('ERROR publishing topic = ' + topic + ': ' + util.inspect(err));
+        plugin.log('ERROR publishing topic = ' + topic + ': ' + util.inspect(err), 1);
       }
     });
   }
@@ -306,15 +323,15 @@ module.exports = async function(plugin) {
       client.publish(topic, message, options, (err) => {
         plugin.log('PUBLISH: ' + topic + ' ' + message + ' with options = ' + util.inspect(options), 2);
         if (err) {
-          plugin.log('ERROR publishing topic = ' + topic + ': ' + util.inspect(err));
+          plugin.log('ERROR publishing topic = ' + topic + ': ' + util.inspect(err), 1);
           if (bufferlength > 0) {
             writebuffer(topic, message, options, bufferlength);
           }
         }
       });
     } else if (bufferlength > 0) {
-        writeBuffer(topic, message, options, bufferlength);
-      }
+      writeBuffer(topic, message, options, bufferlength);
+    }
   }
 
   function writeBuffer(topic, message, options, bufferlength) {
@@ -333,36 +350,67 @@ module.exports = async function(plugin) {
     // plugin.log('Buffer ' + util.inspect(buffer[topic]), 2);
   }
 
-  function addChannel({ id, topic }) {
-    if (!topic || !id) return;
-    // Добавить топик в subMap; подписаться на него, если пока нет подписки
-    const newtopic = converter.addSubMapItem(topic, id);
-    if (newtopic) subscribe(newtopic);
-  }
-
-  function updateChannel({ oldid, id, topic }) {
-    if (!oldid || !id) return;
-    const oldtopic = converter.findTopicById(oldid);
-    if (oldtopic == topic) {
-      // Изменилось только id - топик не дергать (subscribe/unsubscribe)
-      if (oldid != id) {
-        converter.deleteSubMapItem(topic, oldid);
-        addChannel({ id, topic });
-      }
-      return;
+  function addChannel(item) {
+    if (!item.topic || !item.id) return;
+    let newtopic;
+    if (!item.parenttopic) {
+      // Добавить топик в subMap; подписаться на него, если пока нет подписки
+      newtopic = converter.addSubMapItem(item.topic, item.id);
+    } else {
+      // Добавить топик в subNodeMap; подписаться на него, если пока нет подписки
+      newtopic = converter.addSubNodeMapItem(item.parenttopic, item.id, item.scriptfile);
     }
-    // Топик изменился
-    deleteChannel({ oldid });
-    addChannel({ id, topic });
+    if (newtopic) subscribe(newtopic);
+
+
   }
 
-  function deleteChannel({ oldid }) {
-    if (!oldid) return;
-    const topic = converter.findTopicById(oldid);
-    const restopic = converter.deleteSubMapItem(topic, oldid);
-    if (restopic) {
-      plugin.log('UNSUBSCRIBE: ' + restopic, 1);
-      client.unsubscribe(restopic);
+  function updateChannel(item) {
+    if (!item.oldid || !item.id) return;
+    if (!item.parenttopic) {
+      const oldtopic = converter.findTopicById(item.oldid);
+      if (oldtopic == item.topic) {
+        // Изменилось только id - топик не дергать (subscribe/unsubscribe)
+        if (item.oldid != item.id) {
+          converter.deleteSubMapItem(item.topic, item.oldid);
+          addChannel(item);
+        }
+        return;
+      }
+      // Топик изменился  
+    } else {
+      const oldtopic = converter.findNodeTopicById(item.oldid);
+      if (oldtopic == item.parenttopic) {
+        // Изменилось только id - топик не дергать (subscribe/unsubscribe)
+        if (item.oldid != item.id) {
+          converter.deleteSubNodeMapItem(item.parenttopic, item.oldid);
+          addChannel(item);
+        }
+
+        return;
+      }
+    }
+    deleteChannel(item);
+    addChannel(item);
+    
+  }
+
+  function deleteChannel(item) {
+    if (!item.oldid) return;
+    let restopicSubMap;
+    let restopicSubNodeMap;
+    let topic;
+      topic = converter.findTopicById(item.oldid);
+      restopicSubMap = converter.deleteSubMapItem(topic, item.oldid);
+      topic = converter.findNodeTopicById(item.oldid);
+      restopicSubNodeMap = converter.deleteSubNodeMapItem(topic, item.oldid);  
+    if (restopicSubMap) {
+      plugin.log('UNSUBSCRIBE: ' + restopicSubMap, 1);
+      client.unsubscribe(restopicSubMap);
+    }
+    if (restopicSubNodeMap) {
+      plugin.log('UNSUBSCRIBE: ' + restopicSubNodeMap, 1);
+      client.unsubscribe(restopicSubNodeMap);
     }
   }
 
@@ -403,7 +451,7 @@ module.exports = async function(plugin) {
       plugin.log('SUBSCRIBE: ' + scanTopic, 1);
       client.subscribe(scanTopic, err => {
         if (err) {
-          plugin.log('ERROR subscribe on ' + scanTopic + ': ' + util.inspect(err));
+          plugin.log('ERROR subscribe on ' + scanTopic + ': ' + util.inspect(err), 1);
           scanner.stop();
         }
       });
@@ -421,7 +469,7 @@ module.exports = async function(plugin) {
           subscribe(converter.getSubMapTopics());
         } else {
           // plugin.log('ERROR unsubscribe on '+scanTopic +': '+ util.inspect(err));
-          plugin.exit(1, 'ERROR unsubscribe on ' + scanTopic + ': ' + util.inspect(err));
+          plugin.exit(1, 'ERROR unsubscribe on ' + scanTopic + ': ' + util.inspect(err), 1);
         }
       });
     }
@@ -490,6 +538,8 @@ module.exports = async function(plugin) {
         deleteChannel(rec);
       }
     });
+    //plugin.log("SubMap " + util.inspect(converter.subMap))
+    //plugin.log("NodeSubMap " + util.inspect(converter.subNodeMap))
   });
 
   plugin.onChange('extra', async recs => {
@@ -502,7 +552,17 @@ module.exports = async function(plugin) {
     subIhExtraChannels(converter.saveExtraGetFilter(plugin.extraChannels));
   });
 
+  plugin.onChange("channelscript", recs => {
+    recs.forEach(rec => {
+      plugin.log('onChange channelscript ' + util.inspect(rec), 2);
+      if (rec.scriptfile) {
+        delete require.cache[require.resolve(rec.scriptfile)];
+      }
+    });
+  })
+
   plugin.on('exit', () => {
     if (client) client.end();
   });
+
 };

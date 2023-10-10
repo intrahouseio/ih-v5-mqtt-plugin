@@ -51,6 +51,13 @@
       "hide": "data.p1.protocol.id != \"mqtts\" || !data.p1.useselfsigned" 
     },
     {
+      "prop": "ca",
+      "title": "CA CERT file path",
+      "type": "input",
+      "default": "/",
+      "hide": "data.p1.protocol.id != \"mqtts\" || !data.p1.useselfsigned" 
+    },
+    {
       "prop": "clean",
       "title": "CleanSession",
       "type": "cb",

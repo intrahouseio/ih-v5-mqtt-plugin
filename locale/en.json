@@ -21,6 +21,8 @@
     "pubtopic" : "Publish topic",
     "pubmessage" : "Publish message",
     "header_testwrite": "Write Test",
+    "parenttopic": "Parent topic",
+    "parentname": "Parent name",
     "testValue" : "Test publish message",
     "realtime_chan_str": "Channel",
     "realtime_dev_str": "Device",
