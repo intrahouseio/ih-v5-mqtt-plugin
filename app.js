@@ -229,10 +229,11 @@ module.exports = async function (plugin) {
           plugin.log('Get command todo ' + util.inspect(data[0]), 2);
           formAndSendCommand(data[0]);
         } else {
-          if (plugin.params.extract_ts && plugin.params.ts_field) processTimestamp(data);
+          if (plugin.params.extract_ts && plugin.params.ts_field) processTimestamp(data, plugin.params.ts_field);
           if (arch) {
             plugin.sendArchive(data);
           } else {
+            plugin.log("data " + util.inspect(data))
             plugin.sendData(data);
           }
         }
@@ -428,7 +429,7 @@ module.exports = async function (plugin) {
       if (item.value) {
         let vobj = JSON.parse(item.value);
         if (vobj[ts_field]) {
-          item.ts = new Date(vobj.ts).getTime();
+          item.ts = new Date(vobj[ts_field]).getTime();
         }
       }
     });
