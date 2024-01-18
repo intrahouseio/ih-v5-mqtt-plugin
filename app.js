@@ -233,7 +233,7 @@ module.exports = async function (plugin) {
           if (arch) {
             plugin.sendArchive(data);
           } else {
-            plugin.log("data " + util.inspect(data))
+            plugin.log("data " + util.inspect(data), 2)
             plugin.sendData(data);
           }
         }
@@ -487,7 +487,7 @@ module.exports = async function (plugin) {
     message.data.forEach(item => {
       try {
         const pubStr = publishAct(item);
-        plugin.log('PUBLISH ' + pubStr, 1);
+        //plugin.log('PUBLISH ' + pubStr, 1);
       } catch (e) {
         const errStr = 'ERROR PUBLISH!! ERROR: ' + util.inspect(e);
         plugin.log(errStr, 1);
