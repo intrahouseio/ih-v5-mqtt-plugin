@@ -192,7 +192,7 @@ module.exports = async function (plugin) {
 
   async function sendChstatus(chstatus) {
     const channels = await plugin.channels.get();
-    plugin.sendData(channels.map(item => ({ id: item.chan, chstatus })))
+    plugin.sendData(channels.map(item => ({ id: item.id, chstatus })))
   }
 
   function processMessage(topic, message) {
@@ -229,6 +229,7 @@ module.exports = async function (plugin) {
           plugin.log('Get command todo ' + util.inspect(data[0]), 2);
           formAndSendCommand(data[0]);
         } else {
+          
           if (plugin.params.extract_ts && plugin.params.ts_field) processTimestamp(data, plugin.params.ts_field);
           if (arch) {
             plugin.sendArchive(data);
@@ -238,7 +239,7 @@ module.exports = async function (plugin) {
           }
         }
       } catch (e) {
-        plugin.log('Time process error, expected JSON with "' + plugin.params.ts_field + '" property', 1);
+        plugin.log('Time process error, ' + e, 1);
       }
     }
   }
@@ -425,12 +426,13 @@ module.exports = async function (plugin) {
    * @throw при JSON.parse
    */
   function processTimestamp(data, ts_field) {
+    plugin.log("data " + util.inspect(data));
     data.forEach(item => {
       if (item.value) {
         let vobj = JSON.parse(item.value);
-        if (vobj[ts_field]) {
+        if (vobj[ts_field]) {  
           item.ts = new Date(vobj[ts_field]).getTime();
-        }
+        } 
       }
     });
   }

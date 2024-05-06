@@ -2,6 +2,7 @@
   "description": "MQTT client",
   "single":0,
   "extratab":1,
+  "innerId":1,
 
   "validator": {
     "main": {
