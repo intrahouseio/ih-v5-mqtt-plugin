@@ -3,7 +3,8 @@
   "single":0,
   "extratab":1,
   "innerId":1,
-
+  "passwordProp":"password",
+  
   "validator": {
     "main": {
       "port":{"notempty": true}
