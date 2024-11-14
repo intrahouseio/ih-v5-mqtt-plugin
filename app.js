@@ -15,6 +15,12 @@ module.exports = async function (plugin) {
   let buffer = {};
   let extraChannels = {};
   let clientState = 'offline';
+  
+  plugin.log('Params' + util.inspect(plugin.params), 1);
+  if (!plugin.params.password) {
+    plugin.params.password = plugin.getPassword(plugin.params);
+  }
+  
   const scanner = new Scanner(plugin);
 
   // Подготовить каналы для подписки на брокере
@@ -93,7 +99,6 @@ module.exports = async function (plugin) {
     will.retain = willretain;
 
     let options;
-    plugin.log('Params' + util.inspect(plugin.params), 1);
     if (clean == 1) {
       options = { host, port, protocol, will };
     } else {
